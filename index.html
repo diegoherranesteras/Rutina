@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Mi semana interactiva</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#22100F">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mi semana">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#22100F;--bg-top:#2C1517;--surface:#321719;--surface-2:#3B1C1F;
+    --line:rgba(242,232,219,.12);--line-strong:rgba(242,232,219,.22);
+    --bone:#F2E8DB;--bone-dim:#C8B6A7;--bone-faint:#9B897D;
+    --brass:#CFA64E;--brass-bright:#E6C069;--blood:#DA4030;--blood-bright:#F05543;
+    --display:'Anton','Arial Narrow','Oswald',sans-serif;
+    --body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+    --mono:'Space Mono',ui-monospace,'SFMono-Regular',monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  button{font-family:inherit;color:inherit;background:none;border:0}
+  body{
+    background:var(--bg);
+    background-image:radial-gradient(120% 60% at 50% -10%, var(--bg-top) 0%, var(--bg) 55%);
+    color:var(--bone);font-family:var(--body);line-height:1.55;
+    -webkit-font-smoothing:antialiased;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+    padding-bottom:56px;
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:calc(56px + env(safe-area-inset-bottom));
+  }
+  .ropes{height:9px;display:flex;flex-direction:column;gap:2px}
+  .ropes span{height:2px;display:block}
+  .ropes span:nth-child(1){background:var(--blood)}
+  .ropes span:nth-child(2){background:var(--brass)}
+  .ropes span:nth-child(3){background:var(--bone-faint)}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--brass)}
+  .hero{padding:46px 0 22px;animation:rise .6s ease both}
+  .hero h1{font-family:var(--display);font-weight:400;line-height:.86;letter-spacing:-.01em;text-transform:uppercase;font-size:clamp(2.8rem,9vw,5.6rem);margin:12px 0 0}
+  .hero h1 .red{color:var(--blood)}
+  .hero .lead{margin-top:16px;font-size:clamp(1rem,2.2vw,1.12rem);color:var(--bone-dim);max-width:56ch}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .leg{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--bone-dim)}
+  .leg::before{content:"";width:10px;height:10px;border-radius:50%}
+  .leg.meal::before{background:var(--brass)}
+  .leg.train::before{background:var(--blood)}
+  .leg.rest::before{background:var(--bone-faint)}
+  .hint{margin-top:16px;font-size:.9rem;color:var(--bone-dim)}
+  .hint b{color:var(--brass-bright);font-weight:700}
+  .week{display:grid;grid-template-columns:1fr;gap:14px;margin-top:24px}
+  @media(min-width:680px){.week{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:980px){.week{grid-template-columns:repeat(4,1fr)}}
+  @media(min-width:1160px){.week{grid-template-columns:repeat(7,1fr);gap:9px}}
+  .day{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:14px 13px 9px;display:flex;flex-direction:column}
+  .day-h{border-bottom:2px solid var(--accent);padding-bottom:9px;margin-bottom:3px}
+  .dname{font-family:var(--display);font-size:1.3rem;text-transform:uppercase;color:var(--accent);letter-spacing:.02em;line-height:1}
+  .dtype{font-family:var(--mono);font-size:.62rem;letter-spacing:.07em;text-transform:uppercase;color:var(--bone-faint);margin-top:5px}
+  .item{display:grid;grid-template-columns:38px 1fr;gap:8px;padding:7px 1px;border-top:1px solid var(--line);width:100%;text-align:left}
+  .agenda .item:first-child{border-top:none}
+  .item time{font-family:var(--mono);font-size:.69rem;color:var(--bone-faint);padding-top:2px;text-align:right;white-space:nowrap}
+  .lab{position:relative;padding-left:15px}
+  .lab::before{content:"";position:absolute;left:0;top:6px;width:8px;height:8px;border-radius:50%;background:var(--c,var(--bone-faint))}
+  .lab b{display:block;font-size:.79rem;font-weight:700;line-height:1.25}
+  .lab span{display:block;font-size:.69rem;color:var(--bone-dim);line-height:1.3}
+  .item.meal{--c:var(--brass)}
+  .item.train{--c:var(--blood)}
+  .item.train .lab b{color:var(--blood-bright)}
+  .item.rest{--c:var(--bone-faint)}
+  button.clickable{cursor:pointer;position:relative;border-radius:7px;transition:background .15s ease}
+  button.clickable .lab{padding-right:16px}
+  button.clickable::after{content:"\203A";position:absolute;right:4px;top:50%;transform:translateY(-50%);color:var(--bone-faint);font-size:1.15rem;line-height:1}
+  button.clickable:hover{background:rgba(242,232,219,.05)}
+  button.clickable:hover::after{color:var(--brass)}
+  .d-lun{--accent:#E2B24E}.d-mar{--accent:#E2954A}.d-mie{--accent:#E07C42}
+  .d-jue{--accent:#DA5C3E}.d-vie{--accent:#D75E66}.d-sab{--accent:#CF7280}.d-dom{--accent:#9B897D}
+  .day.d-dom{opacity:.9}
+  .note{margin-top:26px;background:var(--surface-2);border-left:3px solid var(--brass);border-radius:0 12px 12px 0;padding:16px 20px;font-size:.92rem;color:var(--bone-dim)}
+  .note b{color:var(--bone)}
+  .note .lbl{display:block;font-family:var(--mono);font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--brass-bright);margin-bottom:7px}
+  .foot{margin-top:30px;color:var(--bone-faint);font-size:.8rem}
+  .overlay{position:fixed;inset:0;background:rgba(9,4,4,.68);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;animation:fade .18s ease}
+  .overlay[hidden]{display:none}
+  .sheet{background:var(--surface);border:1px solid var(--line-strong);border-radius:16px;max-width:460px;width:100%;padding:24px 22px 22px;position:relative;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:pop .2s ease}
+  .close{position:absolute;top:12px;right:12px;color:var(--bone-dim);font-size:1.15rem;cursor:pointer;line-height:1;padding:6px;border-radius:6px}
+  .close:hover{color:var(--bone)}
+  .sheet-kicker{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--brass)}
+  .sheet h3{font-family:var(--display);font-weight:400;text-transform:uppercase;font-size:1.7rem;line-height:1;margin:9px 0 5px;letter-spacing:.01em}
+  .sheet-sub{color:var(--bone-dim);font-size:.85rem;margin-bottom:12px}
+  .srow{display:flex;justify-content:space-between;gap:14px;align-items:baseline;padding:10px 0;border-top:1px solid var(--line)}
+  .srow:first-child{border-top:none}
+  .sname{font-size:.95rem}
+  .sval{font-family:var(--mono);font-size:.85rem;color:var(--brass);white-space:nowrap;text-align:right}
+  .sheet-note{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);color:var(--bone-faint);font-size:.8rem;line-height:1.5}
+  :focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:4px}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  @keyframes slideup{from{transform:translateY(100%)}to{transform:none}}
+  @media(max-width:520px){.overlay{padding:0;align-items:flex-end}.sheet{max-width:none;border-radius:16px 16px 0 0;animation:slideup .22s ease}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="ropes" aria-hidden="true"><span></span><span></span><span></span></div>
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Plan de entrenamiento · Santander</div>
+    <h1>Tu semana,<br><span class="red">al detalle</span></h1>
+    <p class="lead">Entrenos de mañana, tardes para clase o trabajo. Toca cualquier bloque y se abre con lo que tienes que hacer o comer ese día.</p>
+    <div class="legend">
+      <div class="leg meal">Comidas</div>
+      <div class="leg train">Entrenos</div>
+      <div class="leg rest">Clase, vida y descanso</div>
+    </div>
+    <p class="hint">Toca cualquier <b>entreno</b> para ver los ejercicios, o una <b>comida</b> para ver las cantidades.</p>
+  </header>
+  <div class="week">
+
+    <article class="day d-lun">
+      <div class="day-h"><div class="dname">Lun</div><div class="dtype">Pierna · Gym</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>07:30</time><div class="lab"><b>Despertar</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>07:45</time><div class="lab"><b>Pre-entreno</b><span>plátano + yogur</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="pierna"><time>08:30</time><div class="lab"><b>Gym · Pierna</b><span>pesada + potencia cadera</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>10:00</time><div class="lab"><b>Desayuno fuerte</b><span>avena + huevos + fruta</span></div></button>
+        <div class="item rest"><time>11:00</time><div class="lab"><b>Tiempo libre</b><span>tus cosas</span></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>arroz + pollo + verdura</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="snack"><time>15:30</time><div class="lab"><b>Snack</b><span>fruta + frutos secos</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Clase / trabajo</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>pescado + patata</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b><span>~8 h</span></div></div>
+      </div>
+    </article>
+
+    <article class="day d-mar">
+      <div class="day-h"><div class="dname">Mar</div><div class="dtype">Empuje + Boxeo · doble</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>07:15</time><div class="lab"><b>Despertar</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>07:30</time><div class="lab"><b>Pre-entreno</b><span>plátano + yogur</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="empuje"><time>08:30</time><div class="lab"><b>Gym · Empuje</b><span>+ potencia superior</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="refuel"><time>09:45</time><div class="lab"><b>Refuel</b><span>fruta + batido</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="boxeo"><time>10:15</time><div class="lab"><b>Boxeo</b><span>técnica + cardio</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>11:30</time><div class="lab"><b>Desayuno fuerte</b><span>avena + huevos</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>pasta + ternera + verdura</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Clase / trabajo</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>pollo + arroz</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b></div></div>
+      </div>
+    </article>
+
+    <article class="day d-mie">
+      <div class="day-h"><div class="dname">Mié</div><div class="dtype">Boxeo</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>07:30</time><div class="lab"><b>Despertar</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>07:45</time><div class="lab"><b>Pre-entreno</b><span>plátano</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="boxeo"><time>08:30</time><div class="lab"><b>Boxeo</b><span>técnica + cardio</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>10:00</time><div class="lab"><b>Desayuno fuerte</b><span>avena + huevos</span></div></button>
+        <div class="item rest"><time>11:00</time><div class="lab"><b>Tiempo libre</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>arroz + pollo + verdura</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="snack"><time>15:30</time><div class="lab"><b>Snack</b><span>yogur + fruta</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Clase / trabajo</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>huevos + patata</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b></div></div>
+      </div>
+    </article>
+
+    <article class="day d-jue">
+      <div class="day-h"><div class="dname">Jue</div><div class="dtype">Tirón + Boxeo · doble</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>07:15</time><div class="lab"><b>Despertar</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>07:30</time><div class="lab"><b>Pre-entreno</b><span>plátano + yogur</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="tiron"><time>08:30</time><div class="lab"><b>Gym · Tirón</b><span>+ potencia rotacional</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="refuel"><time>09:45</time><div class="lab"><b>Refuel</b><span>fruta + batido</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="boxeo"><time>10:15</time><div class="lab"><b>Boxeo</b><span>técnica + cardio</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>11:30</time><div class="lab"><b>Desayuno fuerte</b><span>avena + huevos</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>pasta + ternera + verdura</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Clase / trabajo</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>pescado + patata</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b></div></div>
+      </div>
+    </article>
+
+    <article class="day d-vie">
+      <div class="day-h"><div class="dname">Vie</div><div class="dtype">Boxeo</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>07:30</time><div class="lab"><b>Despertar</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>07:45</time><div class="lab"><b>Pre-entreno</b><span>plátano + yogur</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="boxeo"><time>08:30</time><div class="lab"><b>Boxeo</b><span>técnica + cardio, sin lastre de gym</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>10:00</time><div class="lab"><b>Desayuno fuerte</b><span>avena + huevos</span></div></button>
+        <div class="item rest"><time>11:00</time><div class="lab"><b>Tiempo libre</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>arroz + pollo + verdura</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="snack"><time>15:30</time><div class="lab"><b>Snack</b><span>fruta + frutos secos</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Clase / trabajo</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>pollo + arroz</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b></div></div>
+      </div>
+    </article>
+
+    <article class="day d-sab">
+      <div class="day-h"><div class="dname">Sáb</div><div class="dtype">Pierna ligera · Gym</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>08:30</time><div class="lab"><b>Despertar</b><span>duerme más</span></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="pre"><time>08:45</time><div class="lab"><b>Pre-entreno</b><span>plátano + yogur</span></div></button>
+        <button class="item train clickable" data-cat="train" data-k="piernaLig"><time>09:30</time><div class="lab"><b>Gym · Pierna</b><span>ligera + pliometría/agilidad</span></div></button>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>11:00</time><div class="lab"><b>Desayuno fuerte</b><span>avena + fruta</span></div></button>
+        <div class="item rest"><time>12:00</time><div class="lab"><b>Tiempo libre</b><span>tus cosas</span></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>arroz + carne + verdura</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Tiempo libre</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>21:00</time><div class="lab"><b>Cena</b><span>pescado + patata</span></div></button>
+        <div class="item rest"><time>23:00</time><div class="lab"><b>Tiempo libre</b></div></div>
+        <div class="item rest"><time>00:00</time><div class="lab"><b>Dormir</b></div></div>
+      </div>
+    </article>
+
+    <article class="day d-dom">
+      <div class="day-h"><div class="dname">Dom</div><div class="dtype">Descanso</div></div>
+      <div class="agenda">
+        <div class="item rest"><time>09:00</time><div class="lab"><b>Despertar</b><span>sin prisa</span></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="desayuno"><time>09:30</time><div class="lab"><b>Desayuno</b><span>huevos + fruta</span></div></button>
+        <div class="item rest"><time>11:00</time><div class="lab"><b>Día libre</b><span>tus cosas</span></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="comida"><time>14:00</time><div class="lab"><b>Comida</b><span>con proteína</span></div></button>
+        <div class="item rest"><time>16:00</time><div class="lab"><b>Tiempo libre</b></div></div>
+        <button class="item meal clickable" data-cat="meal" data-k="cena"><time>20:30</time><div class="lab"><b>Cena</b><span>proteína + verdura</span></div></button>
+        <div class="item rest"><time>22:30</time><div class="lab"><b>Desconexión</b></div></div>
+        <div class="item rest"><time>23:30</time><div class="lab"><b>Dormir</b><span>listo pa'l lunes</span></div></div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="note">
+    <span class="lbl">Cómo usarlo</span>
+    Toca un <b>entreno</b> (en rojo) y verás los ejercicios con sus series y repeticiones. Toca una <b>comida</b> (en dorado) y te da las cantidades. Todos los pesos son <b>en crudo</b>: el día completo suma unas 3.400-3.450 kcal y ~180-190 g de proteína.
+  </div>
+  <div class="note" style="border-left-color:var(--blood)">
+    <span class="lbl" style="color:var(--blood-bright)">Recuerda</span>
+    Las cantidades son un <b>punto de partida</b>. Pésate 2-3 veces por semana: si subes 0,25-0,4 kg/semana, perfecto; si no, suma un poco de arroz o pasta. Los ejercicios de potencia (kettlebell swing, landmine, balón medicinal, pliometría) están inspirados en el método de Aldo Martínez, preparador físico de Ilia Topuria: pocos movimientos, muy bien ejecutados, con transferencia directa al combate. Y confirma que tu club de boxeo abre por la mañana para dejar martes, miércoles, jueves y viernes definitivos.
+  </div>
+  <div class="foot">
+    <p>Orientativo, no consejo médico. Las cantidades son ejemplos para tu peso y objetivo; ajústalas con la báscula.</p>
+  </div>
+</div>
+
+<div class="overlay" id="ov" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <button class="close" id="closeBtn" type="button" aria-label="Cerrar">&#10005;</button>
+    <div class="sheet-kicker" id="sheetKicker"></div>
+    <h3 id="sheetTitle"></h3>
+    <div class="sheet-sub" id="sheetSub"></div>
+    <div class="sheet-list" id="sheetList"></div>
+    <div class="sheet-note" id="sheetNote"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var D = {
+    train: {
+      pierna: {title:'Gym · Pierna', sub:'Pesada + potencia de cadera · estilo Aldo Martínez (Topuria)', items:[
+        ['Sentadilla trasera','4×5'],['Peso muerto rumano','3×8'],
+        ['Kettlebell swing (explosivo)','4×15'],['Zancada con rotación','3×10/lado'],
+        ['Gemelos','4×15'],['Plancha con rotación (core)','3×30 s']],
+        note:'Base pesada (sentadilla + RDL) igual que siempre, pero el swing de kettlebell es la pieza clave: potencia de cadera explosiva, directa a velocidad de golpe.'},
+      empuje: {title:'Gym · Empuje', sub:'Potencia de tren superior · estilo Aldo Martínez', items:[
+        ['Press banca','4×6'],['Landmine press (unilateral)','3×10/lado'],
+        ['Lanzamiento balón medicinal (chest pass)','4×6'],['Press militar','3×8'],
+        ['Fondos','3×10'],['Balón medicinal slam (core)','3×10']],
+        note:'El landmine (barra anclada al suelo) es la herramienta que más usa Aldo: presión + rotación con transferencia directa al ring.'},
+      tiron: {title:'Gym · Tirón', sub:'Potencia rotacional · estilo Aldo Martínez', items:[
+        ['Dominadas o jalón','4×6-8'],['Remo landmine (unilateral)','3×10/lado'],
+        ['Rotación landmine (core)','3×10/lado'],['Face pulls','3×15'],
+        ['Curl con barra','3×10'],['Pallof press (anti-rotación)','3×10/lado']],
+        note:'La rotación de core con landmine es la base de la potencia del cruzado/gancho.'},
+      piernaLig: {title:'Gym · Pierna', sub:'Ligera + pliometría y footwork', items:[
+        ['Hip thrust','4×10'],['Comba','10 min'],['Escalera de agilidad','4 series'],
+        ['Salto al cajón (pliometría)','4×6'],['Zancada búlgara','3×10/lado'],['Gemelos','4×15']],
+        note:'Comba + escalera = ritmo y coordinación de pies, la parte que menos se entrena en un gym normal y más pesa en el ring.'},
+      boxeo: {title:'Boxeo', sub:'Técnica + cardio · 1 min entre asaltos', items:[
+        ['Calentamiento + comba','10 min'],['Sombra','3×3 min'],['Saco','4×3 min'],
+        ['Manoplas / técnica','4×3 min'],['Core + acondicionamiento','10 min'],['Estiramientos','5 min']]}
+    },
+    meal: {
+      pre: {title:'Pre-entreno', sub:'~205 kcal · 10 g proteína', items:[
+        ['Plátano','1 (~120 g)'],['Yogur griego natural','125 g']],
+        note:'Algo ligero para no entrenar en ayunas total.'},
+      desayuno: {title:'Desayuno fuerte', sub:'~945 kcal · 44 g proteína', items:[
+        ['Avena (en seco)','110 g'],['Leche entera','350 ml'],['Huevos','3'],['Plátano o fruta','1']],
+        note:'Es tu comida de recuperación después de entrenar. Subida de 100→110 g de avena y 300→350 ml de leche para llegar a las ~3.400 kcal del día.'},
+      refuel: {title:'Refuel', sub:'~225 kcal · 26 g proteína', items:[
+        ['Proteína en polvo','1 cazo (~30 g)'],['Agua o leche','a gusto'],['Plátano','1']],
+        note:'Entre las pesas y el boxeo, en los días dobles.'},
+      comida: {title:'Comida', sub:'~1.110 kcal · 65 g proteína', items:[
+        ['Arroz o pasta (en crudo)','170 g'],['Pollo o ternera (en crudo)','210 g'],
+        ['Verdura variada','250 g'],['Aceite de oliva','2 cda (20 ml)']],
+        note:'Verdura variada = 250 g de algo no feculento: brócoli, judía verde, calabacín, pimiento, zanahoria, champiñones o ensalada (lechuga+tomate+pepino). Cambia el tipo cada día, cocínala al vapor o salteada, y si quieres más volumen puedes añadir hoja verde (espinaca, lechuga) prácticamente gratis en calorías.'},
+      snack: {title:'Snack', sub:'~315 kcal · 8 g proteína', items:[
+        ['Fruta','1'],['Frutos secos','35 g']],
+        note:'O yogur griego + fruta si lo prefieres.'},
+      cena: {title:'Cena', sub:'~880 kcal · 63 g proteína', items:[
+        ['Patata (o 150 g de arroz)','350 g'],['Pescado, pollo o huevos','210 g'],
+        ['Verdura variada','250 g'],['Aceite de oliva','1 cda (15 ml)'],['Pan integral','60 g']],
+        note:'Misma lógica que en la comida: 250 g de verdura no feculenta, la que te apetezca, variando a lo largo de la semana.'}
+    }
+  };
+  var ov=document.getElementById('ov');
+  var elKick=document.getElementById('sheetKicker');
+  var elTitle=document.getElementById('sheetTitle');
+  var elSub=document.getElementById('sheetSub');
+  var elList=document.getElementById('sheetList');
+  var elNote=document.getElementById('sheetNote');
+  var lastFocus=null;
+  function openSheet(cat,k){
+    var d=(D[cat]||{})[k];
+    if(!d)return;
+    elKick.textContent=cat==='train'?'Entreno':'Comida';
+    elTitle.textContent=d.title;
+    elSub.textContent=d.sub||'';
+    elList.innerHTML='';
+    (d.items||[]).forEach(function(row){
+      var r=document.createElement('div');r.className='srow';
+      var a=document.createElement('span');a.className='sname';a.textContent=row[0];
+      var b=document.createElement('span');b.className='sval';b.textContent=row[1];
+      r.appendChild(a);r.appendChild(b);elList.appendChild(r);
+    });
+    var note=d.note||'';
+    if(cat==='meal'){note+=(note?' ':'')+'Pesos en crudo. El día completo suma ~3.400-3.450 kcal y ~180-190 g de proteína; ajusta con la báscula.';}
+    elNote.textContent=note;
+    elNote.style.display=note?'block':'none';
+    lastFocus=document.activeElement;
+    ov.hidden=false;
+    document.body.style.overflow='hidden';
+    document.getElementById('closeBtn').focus();
+  }
+  function closeSheet(){
+    ov.hidden=true;
+    document.body.style.overflow='';
+    if(lastFocus&&lastFocus.focus){lastFocus.focus();}
+  }
+  var btns=document.querySelectorAll('.clickable');
+  for(var i=0;i<btns.length;i++){
+    btns[i].addEventListener('click',function(){openSheet(this.getAttribute('data-cat'),this.getAttribute('data-k'));});
+  }
+  document.getElementById('closeBtn').addEventListener('click',closeSheet);
+  ov.addEventListener('click',function(e){if(e.target===ov){closeSheet();}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden){closeSheet();}});
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js').catch(function(){});
+    });
+  }
+})();
+</script>
+</body>
+</html>
