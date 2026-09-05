@@ -99,6 +99,17 @@
   .sname{font-size:.95rem}
   .sval{font-family:var(--mono);font-size:.85rem;color:var(--brass);white-space:nowrap;text-align:right}
   .sheet-note{margin-top:14px;padding-top:13px;border-top:1px solid var(--line);color:var(--bone-faint);font-size:.8rem;line-height:1.5}
+  .srow.exrow{flex-direction:column;align-items:stretch;gap:7px}
+  .ex-head{display:flex;justify-content:space-between;gap:14px;align-items:baseline}
+  .ex-ref{font-family:var(--mono);font-size:.68rem;color:var(--bone-faint)}
+  .ex-weights{display:flex;flex-wrap:wrap;gap:6px}
+  .wt-input{width:52px;padding:7px 4px;text-align:center;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;color:var(--bone);font-family:var(--mono);font-size:.82rem;-moz-appearance:textfield}
+  .wt-input::-webkit-outer-spin-button,.wt-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .wt-input:focus{outline:2px solid var(--brass);outline-offset:1px}
+  .save-weights{display:block;width:100%;margin-top:16px;padding:13px;background:var(--brass);color:var(--bg);font-weight:700;border-radius:9px;text-align:center;font-size:.9rem;cursor:pointer;transition:background .15s ease}
+  .save-weights:hover{background:var(--brass-bright)}
+  .save-weights.saved{background:#5FA06A;color:var(--bone)}
+  .save-weights[hidden]{display:none}
   :focus-visible{outline:2px solid var(--brass);outline-offset:2px;border-radius:4px}
   @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
   @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
@@ -261,6 +272,7 @@
     <h3 id="sheetTitle"></h3>
     <div class="sheet-sub" id="sheetSub"></div>
     <div class="sheet-list" id="sheetList"></div>
+    <button class="save-weights" id="saveWeights" type="button" hidden>Guardar pesos de hoy</button>
     <div class="sheet-note" id="sheetNote"></div>
   </div>
 </div>
@@ -321,24 +333,69 @@
   var elSub=document.getElementById('sheetSub');
   var elList=document.getElementById('sheetList');
   var elNote=document.getElementById('sheetNote');
+  var elSave=document.getElementById('saveWeights');
   var lastFocus=null;
+  var currentCat=null, currentKey=null;
+
+  var LOGKEY='pesosLog';
+  function loadLogs(){ try{return JSON.parse(localStorage.getItem(LOGKEY)||'{}');}catch(e){return {};} }
+  function saveLogs(obj){ try{localStorage.setItem(LOGKEY, JSON.stringify(obj));}catch(e){} }
+  function todayISO(){ var d=new Date(); var m=('0'+(d.getMonth()+1)).slice(-2); var day=('0'+d.getDate()).slice(-2); return d.getFullYear()+'-'+m+'-'+day; }
+  function formatShort(iso){ var p=iso.split('-'); return p[2]+'/'+p[1]; }
+  function parseSets(rep){ var m=String(rep).match(/^(\d+)\s*×\s*\d/); return m? parseInt(m[1],10): null; }
+
   function openSheet(cat,k){
     var d=(D[cat]||{})[k];
     if(!d)return;
+    currentCat=cat; currentKey=k;
     elKick.textContent=cat==='train'?'Entreno':'Comida';
     elTitle.textContent=d.title;
     elSub.textContent=d.sub||'';
     elList.innerHTML='';
-    (d.items||[]).forEach(function(row){
-      var r=document.createElement('div');r.className='srow';
-      var a=document.createElement('span');a.className='sname';a.textContent=row[0];
-      var b=document.createElement('span');b.className='sval';b.textContent=row[1];
-      r.appendChild(a);r.appendChild(b);elList.appendChild(r);
+    var logs=loadLogs();
+    var loggable=false;
+    (d.items||[]).forEach(function(row,idx){
+      var sets=(cat==='train' && k!=='boxeo')?parseSets(row[1]):null;
+      if(sets){
+        loggable=true;
+        var logKey=cat+'_'+k+'_'+idx;
+        var hist=logs[logKey]||[];
+        var last=hist.length?hist[hist.length-1]:null;
+        var r=document.createElement('div');r.className='srow exrow';
+        var head=document.createElement('div');head.className='ex-head';
+        var a=document.createElement('span');a.className='sname';a.textContent=row[0];
+        var b=document.createElement('span');b.className='sval';b.textContent=row[1];
+        head.appendChild(a);head.appendChild(b);
+        r.appendChild(head);
+        if(last){
+          var ref=document.createElement('div');ref.className='ex-ref';
+          ref.textContent='Referencia ('+formatShort(last.date)+'): '+last.w.map(function(x){return x==null?'-':x;}).join(' · ')+' kg';
+          r.appendChild(ref);
+        }
+        var wrap=document.createElement('div');wrap.className='ex-weights';
+        for(var s=0;s<sets;s++){
+          var inp=document.createElement('input');
+          inp.type='number';inp.inputMode='decimal';inp.className='wt-input';inp.placeholder='S'+(s+1);
+          inp.setAttribute('data-idx',idx);inp.setAttribute('data-set',s);
+          if(last && last.w[s]!=null) inp.value=last.w[s];
+          wrap.appendChild(inp);
+        }
+        r.appendChild(wrap);
+        elList.appendChild(r);
+      } else {
+        var r2=document.createElement('div');r2.className='srow';
+        var a2=document.createElement('span');a2.className='sname';a2.textContent=row[0];
+        var b2=document.createElement('span');b2.className='sval';b2.textContent=row[1];
+        r2.appendChild(a2);r2.appendChild(b2);elList.appendChild(r2);
+      }
     });
     var note=d.note||'';
     if(cat==='meal'){note+=(note?' ':'')+'Pesos en crudo. El día completo suma ~3.400-3.450 kcal y ~180-190 g de proteína; ajusta con la báscula.';}
     elNote.textContent=note;
     elNote.style.display=note?'block':'none';
+    elSave.hidden=!loggable;
+    elSave.textContent='Guardar pesos de hoy';
+    elSave.classList.remove('saved');
     lastFocus=document.activeElement;
     ov.hidden=false;
     document.body.style.overflow='hidden';
@@ -349,6 +406,30 @@
     document.body.style.overflow='';
     if(lastFocus&&lastFocus.focus){lastFocus.focus();}
   }
+  elSave.addEventListener('click',function(){
+    var logs=loadLogs();
+    var inputs=elList.querySelectorAll('.wt-input');
+    var byIdx={};
+    for(var i=0;i<inputs.length;i++){
+      var idx=inputs[i].getAttribute('data-idx');
+      var set=parseInt(inputs[i].getAttribute('data-set'),10);
+      var val=inputs[i].value===''?null:parseFloat(inputs[i].value);
+      if(!byIdx[idx])byIdx[idx]=[];
+      byIdx[idx][set]=val;
+    }
+    var today=todayISO();
+    Object.keys(byIdx).forEach(function(idx){
+      var logKey=currentCat+'_'+currentKey+'_'+idx;
+      var hist=logs[logKey]||[];
+      var last=hist.length?hist[hist.length-1]:null;
+      if(last && last.date===today){ last.w=byIdx[idx]; }
+      else{ hist.push({date:today, w:byIdx[idx]}); }
+      logs[logKey]=hist;
+    });
+    saveLogs(logs);
+    elSave.textContent='Guardado ✓';
+    elSave.classList.add('saved');
+  });
   var btns=document.querySelectorAll('.clickable');
   for(var i=0;i<btns.length;i++){
     btns[i].addEventListener('click',function(){openSheet(this.getAttribute('data-cat'),this.getAttribute('data-k'));});
